@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Thủy cung kỳ thú</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="thuycung.css">
+</head>
+
+<body>
+<div id="stage" class="scene0">
+
+    <!-- Bảng điều khiển ở góc trên bên phải -->
+    <div id="panel">
+        <button type="button" onclick="location.href='../index.html'">🏠 Trang chủ</button>
+        <button id="btnScene" type="button">🌊 Đổi cảnh nền</button>
+        <button id="btnSound" type="button">🎶 Bật nhạc</button>
+        <button id="btnPause" type="button">⏸ Tạm dừng</button>
+    </div>
+
+    <audio id="bgm" src="audio/nhac_thuy_cung.mp3" loop preload="auto"></audio>
+
+    <!-- Rạn san hô cuộn ngang -->
+    <div id="reef"></div>
+
+    <!-- Sứa trôi lên xuống -->
+    <div class="jelly" id="jelly1"><img class="sway" src="images/jelly1.gif" alt="Sứa hồng"></div>
+    <div class="jelly" id="jelly2"><img class="sway s2" src="images/jelly2.gif" alt="Sứa xanh"></div>
+    <div class="jelly" id="jelly3"><img class="sway s3" src="images/jelly3.gif" alt="Sứa vàng"></div>
+
+    <!-- Các sinh vật bơi ngang, chạm mép thì quay đầu -->
+    <div class="roam" id="whale"><img src="images/whale.gif" alt="Cá voi"></div>
+    <div class="roam" id="sub"><img class="bob" src="images/submarine.gif" alt="Tàu ngầm"></div>
+    <div class="roam" id="clown"><img class="bob quick" src="images/clownfish.gif" alt="Đàn cá hề"></div>
+    <div class="roam" id="octo"><img class="bob slowbob" src="images/octopus.gif" alt="Bạch tuộc"></div>
+    <div class="roam" id="horse"><img class="bob slowbob" src="images/seahorse.gif" alt="Cá ngựa"></div>
+    <div class="roam" id="crab"><img src="images/crab.gif" alt="Cua"></div>
+
+    <div id="bubbles"></div>
+
+    <!-- Màn hình chào -->
+    <div id="intro">
+        <div class="card">
+            <h1>🐙 Thủy cung kỳ thú 🐳</h1>
+            <p>Chạm vào nút bên dưới để lặn xuống biển</p>
+            <button id="btnGo" type="button">Bước vào thủy cung (có nhạc)</button>
+            <a href="#" id="btnQuiet">Vào mà không bật nhạc</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ----- Bong bóng nổi lên ----- */
+    var box = document.getElementById("bubbles");
+    for (var i = 0; i < 22; i++) {
+        var s = document.createElement("span");
+        var d = 5 + Math.random() * 18;
+        s.style.width = s.style.height = d + "px";
+        s.style.left = (Math.random() * 100) + "%";
+        s.style.animationDuration = (7 + Math.random() * 9) + "s";
+        s.style.animationDelay = (-Math.random() * 14) + "s";
+        box.appendChild(s);
+    }
+
+    /* ----- Đổi cảnh nền (4 ảnh) ----- */
+    var stage = document.getElementById("stage");
+    var scenes = ["scene0", "scene1", "scene2", "scene3"], cur = 0;
+    document.getElementById("btnScene").addEventListener("click", function () {
+        stage.classList.remove(scenes[cur]);
+        cur = (cur + 1) % scenes.length;
+        stage.classList.add(scenes[cur]);
+    });
+
+    /* ----- Tạm dừng / tiếp tục chuyển động ----- */
+    var btnPause = document.getElementById("btnPause");
+    btnPause.addEventListener("click", function () {
+        var paused = document.body.classList.toggle("paused");
+        btnPause.textContent = paused ? "▶ Tiếp tục" : "⏸ Tạm dừng";
+    });
+
+    /* ----- Nhạc: ưu tiên file mp3, dự phòng tự tạo bằng Web Audio ----- */
+    var bgm = document.getElementById("bgm");
+    var btnSound = document.getElementById("btnSound");
+    var soundOn = false, ac = null, tick = null, synth = false, pos = 0;
+    var notes = [293.66, 369.99, 440, 493.88, 587.33, 493.88, 440, 369.99];
+
+    function pluck() {
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.type = "triangle";
+        o.frequency.value = notes[pos % notes.length] * (pos % 16 < 8 ? 1 : 0.8);
+        pos++;
+        g.gain.setValueAtTime(0.0001, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.22, ac.currentTime + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.2);
+        o.connect(g); g.connect(ac.destination);
+        o.start(); o.stop(ac.currentTime + 1.3);
+    }
+    function synthOn() {
+        if (synth) return;
+        synth = true;
+        if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+        ac.resume(); pluck(); tick = setInterval(pluck, 650);
+    }
+    function synthOff() { synth = false; clearInterval(tick); }
+
+    function soundStart() {
+        soundOn = true;
+        btnSound.textContent = "🔇 Tắt nhạc";
+        var p;
+        try { p = bgm.play(); } catch (e) { synthOn(); return; }
+        if (p && p.catch) p.catch(function () { if (soundOn) synthOn(); });
+    }
+    function soundStop() {
+        soundOn = false;
+        btnSound.textContent = "🎶 Bật nhạc";
+        bgm.pause(); synthOff();
+    }
+    bgm.addEventListener("error", function () { if (soundOn) synthOn(); });
+    btnSound.addEventListener("click", function () { soundOn ? soundStop() : soundStart(); });
+
+    /* ----- Màn hình chào ----- */
+    var intro = document.getElementById("intro");
+    document.getElementById("btnGo").addEventListener("click", function () { soundStart(); intro.classList.add("gone"); });
+    document.getElementById("btnQuiet").addEventListener("click", function (e) { e.preventDefault(); intro.classList.add("gone"); });
+</script>
+</body>
+</html>

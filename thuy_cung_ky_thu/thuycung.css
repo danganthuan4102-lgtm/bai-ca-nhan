@@ -1,0 +1,175 @@
+html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* ===== Sân khấu + 4 cảnh nền ===== */
+#stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #0b5f7a;
+    background-size: cover;
+    background-position: center;
+}
+.scene0 { background-image: url("images/tc_bg1.png"); }   /* nước xanh ngọc */
+.scene1 { background-image: url("images/tc_bg2.png"); }   /* biển sâu phát sáng */
+.scene2 { background-image: url("images/tc_bg3.png"); }   /* hoàng hôn san hô */
+.scene3 { background-image: url("images/tc_bg4.png"); }   /* đêm huyền ảo */
+
+/* ===== Bảng điều khiển ===== */
+#panel {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 60;
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+#panel button {
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #06324a;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+#panel button:hover { background: #fff; }
+
+/* ===== Rạn san hô cuộn ngang ===== */
+#reef {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 260px;
+    z-index: 1;
+    background: url("images/reef.png") repeat-x 0 bottom / 1200px 260px;
+    animation: reefScroll 60s linear infinite;
+}
+@keyframes reefScroll {
+    from { background-position: 0 bottom; }
+    to   { background-position: -1200px bottom; }
+}
+
+/* ===== Sinh vật bơi ngang, chạm mép thì quay đầu ===== */
+.roam {
+    position: absolute;
+    left: 0;
+    width: var(--w);
+    animation: sweep var(--t) linear infinite;
+    animation-delay: var(--d, 0s);
+    animation-play-state: running;
+}
+.roam img { display: block; width: 100%; height: auto; }
+
+@keyframes sweep {
+    0%      { left: 0;                        transform: scaleX(1); }
+    49.99%  { left: calc(100vw - var(--w));   transform: scaleX(1); }
+    50%     { left: calc(100vw - var(--w));   transform: scaleX(-1); }
+    99.99%  { left: 0;                        transform: scaleX(-1); }
+    100%    { left: 0;                        transform: scaleX(1); }
+}
+
+/* Cá voi: to, chậm, ở tầng trên */
+#whale  { --w: min(440px, 62vw); --t: 80s; --d: -12s;  top: 8vh;  z-index: 3; }
+/* Tàu ngầm: tốc độ vừa */
+#sub    { --w: min(280px, 42vw); --t: 46s; --d: -30s;  top: 34vh; z-index: 4; }
+/* Đàn cá hề: nhanh */
+#clown  { --w: min(260px, 40vw); --t: 15s; --d: -4s;   top: 52vh; z-index: 4; }
+/* Bạch tuộc: chậm */
+#octo   { --w: min(190px, 30vw); --t: 58s; --d: -8s;   top: 22vh; z-index: 4; }
+/* Cá ngựa: rất chậm */
+#horse  { --w: min(100px, 18vw); --t: 70s; --d: -45s;  top: 58vh; z-index: 4; }
+/* Cua: đi ngang trên đáy rạn */
+#crab   { --w: min(150px, 26vw); --t: 34s; --d: -6s;   bottom: 30px; z-index: 2; }
+
+.bob       { animation: bobUpDown 7s ease-in-out infinite; }
+.bob.quick { animation-duration: 3s; }
+.bob.slowbob { animation-duration: 11s; }
+@keyframes bobUpDown {
+    0%, 100% { transform: translateY(-18px); }
+    50%      { transform: translateY(22px); }
+}
+
+/* ===== Sứa trôi lên xuống (không bơi ngang) ===== */
+.jelly {
+    position: absolute;
+    width: min(110px, 18vw);
+    z-index: 3;
+    animation: floatY var(--ft) ease-in-out infinite alternate;
+    animation-play-state: running;
+}
+.jelly img { display: block; width: 100%; height: auto; }
+#jelly1 { left: 12%; top: 12vh; --ft: 13s; }
+#jelly2 { left: 46%; top: 30vh; --ft: 17s; width: min(80px, 14vw); }
+#jelly3 { left: 78%; top: 16vh; --ft: 15s; width: min(95px, 16vw); }
+@keyframes floatY {
+    from { transform: translateY(0); }
+    to   { transform: translateY(38vh); }
+}
+.sway    { animation: swayX 5s ease-in-out infinite alternate; }
+.sway.s2 { animation-duration: 7s; }
+.sway.s3 { animation-duration: 6s; }
+@keyframes swayX {
+    from { transform: translateX(-16px) rotate(-5deg); }
+    to   { transform: translateX(16px) rotate(5deg); }
+}
+
+/* Nút tạm dừng: dừng toàn bộ chuyển động */
+body.paused .roam, body.paused .jelly, body.paused #reef,
+body.paused .bob, body.paused .sway, body.paused #bubbles span {
+    animation-play-state: paused;
+}
+
+/* ===== Bong bóng ===== */
+#bubbles { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+#bubbles span {
+    position: absolute;
+    bottom: -30px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.1));
+    animation: floatUp linear infinite;
+}
+@keyframes floatUp {
+    from { transform: translateY(0) translateX(0); opacity: 0.9; }
+    50%  { transform: translateY(-55vh) translateX(14px); }
+    to   { transform: translateY(-112vh) translateX(-8px); opacity: 0.15; }
+}
+
+/* ===== Màn hình chào ===== */
+#intro {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(3, 40, 62, 0.55), rgba(2, 18, 30, 0.9));
+    transition: opacity 0.7s, visibility 0.7s;
+}
+#intro.gone { opacity: 0; visibility: hidden; }
+#intro .card { text-align: center; color: #fff; padding: 0 20px; }
+#intro h1 { margin: 0 0 8px; font-size: clamp(26px, 6vw, 48px); }
+#intro p { margin: 0 0 22px; opacity: 0.9; }
+#btnGo {
+    padding: 14px 30px;
+    font-size: 18px;
+    color: #06324a;
+    background: linear-gradient(#a8fff0, #5fe0d0);
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+#btnQuiet { display: block; margin-top: 16px; color: #cfeaf5; font-size: 14px; }
